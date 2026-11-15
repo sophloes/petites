@@ -1,0 +1,204 @@
+import { useState } from 'react';
+import { CATEGORIES, MEASUREMENTS, UNIT, categoryById } from '../config.js';
+import { newId } from '../lib/storage.js';
+import FabricNotes from '../components/FabricNotes.jsx';
+
+const blank = (category = CATEGORIES[0].id) => ({
+  id: null,
+  category,
+  name: '',
+  brand: '',
+  size: '',
+  composition: '',
+  price: '',
+  measurements: {},
+});
+
+export default function Closet({ closet, setCloset }) {
+  const [editing, setEditing] = useState(null); // garment being edited, or null
+  const [filter, setFilter] = useState('all');
+
+  const startNew = () => setEditing(blank(filter === 'all' ? undefined : filter));
+
+  const saveGarment = (g) => {
+    setCloset((list) =>
+      g.id ? list.map((x) => (x.id === g.id ? g : x)) : [...list, { ...g, id: newId() }],
+    );
+    setEditing(null);
+  };
+
+  const remove = (g) => {
+    if (confirm(`Delete ${g.name || g.brand || 'this piece'}?`)) {
+      setCloset((list) => list.filter((x) => x.id !== g.id));
+      setEditing(null);
+    }
+  };
+
+  if (editing) {
+    return (
+      <GarmentForm
+        initial={editing}
+        onSave={saveGarment}
+        onCancel={() => setEditing(null)}
+        onDelete={editing.id ? () => remove(editing) : null}
+      />
+    );
+  }
+
+  const shown = closet.filter((g) => filter === 'all' || g.category === filter);
+
+  return (
+    <section>
+      <div className="row-between">
+        <h2>Your fit closet</h2>
+        <button className="primary" onClick={startNew}>+ Add piece</button>
+      </div>
+
+      <div className="chips">
+        <button className={filter === 'all' ? 'chip on' : 'chip'} onClick={() => setFilter('all')}>
+          All ({closet.length})
+        </button>
+        {CATEGORIES.map((c) => {
+          const n = closet.filter((g) => g.category === c.id).length;
+          return (
+            <button
+              key={c.id}
+              className={filter === c.id ? 'chip on' : 'chip'}
+              onClick={() => setFilter(c.id)}
+            >
+              {c.label} ({n})
+            </button>
+          );
+        })}
+      </div>
+
+      {shown.length === 0 ? (
+        <p className="empty">
+          No pieces yet. Lay a garment that fits you perfectly flat, measure it, and add it here.
+        </p>
+      ) : (
+        <ul className="cards">
+          {shown.map((g) => (
+            <li key={g.id} className="card" onClick={() => setEditing(g)}>
+              <div className="card-title">
+                <strong>{g.name || categoryById(g.category).label}</strong>
+                <span className="muted">
+                  {[g.brand, g.size && `size ${g.size}`].filter(Boolean).join(' · ')}
+                </span>
+              </div>
+              <dl className="measure-list">
+                {categoryById(g.category).fields.map((f) =>
+                  g.measurements[f] ? (
+                    <div key={f}>
+                      <dt>{MEASUREMENTS[f].label}</dt>
+                      <dd>{g.measurements[f]}{UNIT === 'in' ? '"' : ' cm'}</dd>
+                    </div>
+                  ) : null,
+                )}
+              </dl>
+              {g.composition && <div className="muted small">{g.composition}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function GarmentForm({ initial, onSave, onCancel, onDelete }) {
+  const [g, setG] = useState(initial);
+  const cat = categoryById(g.category);
+  const set = (k, v) => setG((x) => ({ ...x, [k]: v }));
+  const setM = (k, v) => setG((x) => ({ ...x, measurements: { ...x.measurements, [k]: v } }));
+
+  const submit = (e) => {
+    e.preventDefault();
+    // Keep only the fields that belong to the chosen category.
+    const measurements = Object.fromEntries(
+      cat.fields.filter((f) => g.measurements[f] !== '' && g.measurements[f] != null)
+        .map((f) => [f, g.measurements[f]]),
+    );
+    onSave({ ...g, measurements });
+  };
+
+  return (
+    <form className="form" onSubmit={submit}>
+      <h2>{initial.id ? 'Edit piece' : 'Add a piece that fits'}</h2>
+
+      <label>
+        Category
+        <select value={g.category} onChange={(e) => set('category', e.target.value)}>
+          {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
+      </label>
+
+      <label>
+        Name <span className="muted">(optional)</span>
+        <input value={g.name} onChange={(e) => set('name', e.target.value)} placeholder="Navy crewneck" />
+      </label>
+
+      <div className="grid2">
+        <label>
+          Brand
+          <input value={g.brand} onChange={(e) => set('brand', e.target.value)} />
+        </label>
+        <label>
+          Size
+          <input value={g.size} onChange={(e) => set('size', e.target.value)} placeholder="XS, 2P…" />
+        </label>
+      </div>
+
+      <fieldset>
+        <legend>Measurements ({UNIT}, laid flat)</legend>
+        <div className="grid2">
+          {cat.fields.map((f) => (
+            <label key={f}>
+              {MEASUREMENTS[f].label}
+              {MEASUREMENTS[f].flat && <span className="muted"> (flat)</span>}
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.25"
+                min="0"
+                value={g.measurements[f] ?? ''}
+                onChange={(e) => setM(f, e.target.value)}
+              />
+            </label>
+          ))}
+        </div>
+        <p className="muted small">
+          Measure bust, waist and hip straight across the garment laid flat. The app doubles them
+          when comparing to size charts.
+        </p>
+      </fieldset>
+
+      <label>
+        Fabric composition
+        <input
+          value={g.composition}
+          onChange={(e) => set('composition', e.target.value)}
+          placeholder="95% cotton, 5% elastane"
+        />
+      </label>
+      <FabricNotes composition={g.composition} category={g.category} />
+
+      <label>
+        Price
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          value={g.price}
+          onChange={(e) => set('price', e.target.value)}
+        />
+      </label>
+
+      <div className="actions">
+        <button type="submit" className="primary">Save</button>
+        <button type="button" onClick={onCancel}>Cancel</button>
+        {onDelete && <button type="button" className="danger" onClick={onDelete}>Delete</button>}
+      </div>
+    </form>
+  );
+}
