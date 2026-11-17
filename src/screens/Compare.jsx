@@ -3,6 +3,7 @@ import { CATEGORIES, MEASUREMENTS, UNIT, categoryById } from '../config.js';
 import { bestMatchForRow } from '../lib/compare.js';
 import { load, save, newId } from '../lib/storage.js';
 import FabricNotes from '../components/FabricNotes.jsx';
+import { Hero, SketchCircle } from '../components/Sketch.jsx';
 
 const emptyRow = () => ({ id: newId(), size: '', values: {} });
 
@@ -64,9 +65,23 @@ export default function Compare({ closet }) {
     return scored[0].row.id;
   }, [results]);
 
+  const best = results.find((r) => r.row.id === bestRowId);
+  const tone = { yes: 'ok', tailor: 'warn', no: 'bad' };
+
   return (
     <section>
-      <h2>Compare a size chart</h2>
+      <Hero
+        big={best ? best.row.size || '?' : '—'}
+        title={best ? 'Best size' : 'Compare'}
+        subtitle={
+          best
+            ? `vs ${best.match.garment.name || best.match.garment.brand || 'your piece'}`
+            : 'Type in a size chart below'
+        }
+        note={best ? 'closest to your closet' : null}
+        status={best ? `Status: ${VERDICT[best.match.verdict]}` : null}
+        statusTone={best ? tone[best.match.verdict] : 'ok'}
+      />
 
       <label>
         Category
@@ -118,10 +133,11 @@ export default function Compare({ closet }) {
         </div>
       )}
 
-      <h3>Size chart ({UNIT})</h3>
+      <h3 className="section-label">Size chart <span className="muted">/ {UNIT}</span></h3>
       {results.map(({ row, match }) => (
         <div key={row.id} className={`size-row ${row.id === bestRowId ? 'best' : ''}`}>
           <div className="row-between">
+            {row.id === bestRowId && <SketchCircle />}
             <input
               className="size-label"
               value={row.size}
@@ -166,7 +182,7 @@ export default function Compare({ closet }) {
             <div className={`verdict v-${match.verdict}`}>
               <div className="verdict-head">
                 <strong>{VERDICT[match.verdict]}</strong>
-                {row.id === bestRowId && <span className="badge">Best size</span>}
+                {row.id === bestRowId && <span className="hand best-note">← best size</span>}
               </div>
               <div className="muted small">
                 vs {match.garment.name || match.garment.brand || 'your piece'}
@@ -186,7 +202,7 @@ export default function Compare({ closet }) {
         + Add size
       </button>
 
-      <h3>Fabric</h3>
+      <h3 className="section-label">Fabric</h3>
       <label>
         Composition
         <input
@@ -208,9 +224,9 @@ export default function Compare({ closet }) {
       </div>
 
       <div className="legend">
-        <span className="st-match">● match</span>
-        <span className="st-fixable">● fixable</span>
-        <span className="st-dealbreaker">● dealbreaker</span>
+        <span className="st-match">✓ match</span>
+        <span className="st-fixable">~ fixable</span>
+        <span className="st-dealbreaker">✕ dealbreaker</span>
       </div>
     </section>
   );

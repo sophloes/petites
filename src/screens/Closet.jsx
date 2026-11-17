@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CATEGORIES, MEASUREMENTS, UNIT, categoryById } from '../config.js';
 import { newId } from '../lib/storage.js';
 import FabricNotes from '../components/FabricNotes.jsx';
+import { Hero, DataRows, SketchUnderline } from '../components/Sketch.jsx';
 
 const blank = (category = CATEGORIES[0].id) => ({
   id: null,
@@ -47,16 +48,22 @@ export default function Closet({ closet, setCloset }) {
 
   const shown = closet.filter((g) => filter === 'all' || g.category === filter);
 
+  const unit = UNIT === 'in' ? '"' : ' cm';
+  const filterLabel = filter === 'all' ? 'All categories' : categoryById(filter).label;
+
   return (
     <section>
-      <div className="row-between">
-        <h2>Your fit closet</h2>
-        <button className="primary" onClick={startNew}>+ Add piece</button>
-      </div>
+      <button className="plus" onClick={startNew} aria-label="Add piece">+</button>
+      <Hero
+        big={shown.length}
+        title="Fit closet"
+        subtitle={filterLabel}
+        note={shown.length === 1 ? 'piece that fits' : 'pieces that fit'}
+      />
 
       <div className="chips">
         <button className={filter === 'all' ? 'chip on' : 'chip'} onClick={() => setFilter('all')}>
-          All ({closet.length})
+          All · {closet.length}
         </button>
         {CATEGORIES.map((c) => {
           const n = closet.filter((g) => g.category === c.id).length;
@@ -66,37 +73,37 @@ export default function Closet({ closet, setCloset }) {
               className={filter === c.id ? 'chip on' : 'chip'}
               onClick={() => setFilter(c.id)}
             >
-              {c.label} ({n})
+              {c.label} · {n}
             </button>
           );
         })}
       </div>
 
       {shown.length === 0 ? (
-        <p className="empty">
-          No pieces yet. Lay a garment that fits you perfectly flat, measure it, and add it here.
-        </p>
+        <div className="empty">
+          <p className="hand">
+            Nothing here yet. Lay a piece that fits you perfectly flat, measure it, and add it.
+          </p>
+          <button className="primary" onClick={startNew}>+ Add piece</button>
+        </div>
       ) : (
         <ul className="cards">
-          {shown.map((g) => (
+          {shown.map((g, i) => (
             <li key={g.id} className="card" onClick={() => setEditing(g)}>
-              <div className="card-title">
-                <strong>{g.name || categoryById(g.category).label}</strong>
-                <span className="muted">
-                  {[g.brand, g.size && `size ${g.size}`].filter(Boolean).join(' · ')}
-                </span>
+              <div className="card-head">
+                <span className="mono card-idx">{String(i + 1).padStart(2, '0')}</span>
+                <div className="card-title">
+                  <strong>{g.name || categoryById(g.category).label}</strong>
+                  <span className="muted">{g.brand}</span>
+                </div>
+                {g.size && <span className="status status-ok">Size {g.size}</span>}
               </div>
-              <dl className="measure-list">
-                {categoryById(g.category).fields.map((f) =>
-                  g.measurements[f] ? (
-                    <div key={f}>
-                      <dt>{MEASUREMENTS[f].label}</dt>
-                      <dd>{g.measurements[f]}{UNIT === 'in' ? '"' : ' cm'}</dd>
-                    </div>
-                  ) : null,
-                )}
-              </dl>
-              {g.composition && <div className="muted small">{g.composition}</div>}
+              <DataRows
+                rows={categoryById(g.category).fields
+                  .filter((f) => g.measurements[f])
+                  .map((f) => ({ label: MEASUREMENTS[f].label, value: `${g.measurements[f]}${unit}` }))}
+              />
+              {g.composition && <div className="hand card-fabric">{g.composition}</div>}
             </li>
           ))}
         </ul>
@@ -123,7 +130,11 @@ function GarmentForm({ initial, onSave, onCancel, onDelete }) {
 
   return (
     <form className="form" onSubmit={submit}>
-      <h2>{initial.id ? 'Edit piece' : 'Add a piece that fits'}</h2>
+      <div className="form-head">
+        <span className="mono muted">{initial.id ? 'Edit / spec' : 'New / spec'}</span>
+        <h2>{initial.id ? 'Edit piece' : 'Add a piece that fits'}</h2>
+        <SketchUnderline />
+      </div>
 
       <label>
         Category
@@ -166,9 +177,8 @@ function GarmentForm({ initial, onSave, onCancel, onDelete }) {
             </label>
           ))}
         </div>
-        <p className="muted small">
-          Measure bust, waist and hip straight across the garment laid flat. The app doubles them
-          when comparing to size charts.
+        <p className="hand annotation">
+          ← bust, waist &amp; hip: straight across, laid flat. The app doubles them for size charts.
         </p>
       </fieldset>
 
