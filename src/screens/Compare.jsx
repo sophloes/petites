@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CATEGORIES, MEASUREMENTS, UNIT, categoryById } from '../config.js';
 import { bestMatchForRow } from '../lib/compare.js';
 import { load, save, newId } from '../lib/storage.js';
+import ConfirmButton from '../components/ConfirmButton.jsx';
 import FabricNotes from '../components/FabricNotes.jsx';
 import { Hero, SketchCircle } from '../components/Sketch.jsx';
 
@@ -214,13 +215,11 @@ export default function Compare({ closet }) {
       <FabricNotes composition={d.composition} category={d.category} />
 
       <div className="actions">
-        <button
-          type="button"
-          className="danger"
-          onClick={() => confirm('Clear this size chart?') && setD({ ...initialDraft(), category: d.category })}
-        >
-          Clear chart
-        </button>
+        <ConfirmButton
+          label="Clear chart"
+          confirmLabel="Tap again to clear"
+          onConfirm={() => setD({ ...initialDraft(), category: d.category })}
+        />
       </div>
 
       <div className="legend">

@@ -389,3 +389,4 @@ label.st-dealbreaker .diff, li.st-dealbreaker, span.st-dealbreaker { color: var(
 .tab-num { opacity: 0.6; font-size: 0.65rem; }
 .tabbar button.active { background: #fff; color: var(--ink); }
 .tabbar button.active .tab-num { color: var(--hot); opacity: 1; }
+button.danger.armed { background: var(--deal); color: #fff; }

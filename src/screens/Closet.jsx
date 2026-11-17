@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CATEGORIES, MEASUREMENTS, UNIT, categoryById } from '../config.js';
 import { newId } from '../lib/storage.js';
+import ConfirmButton from '../components/ConfirmButton.jsx';
 import FabricNotes from '../components/FabricNotes.jsx';
 import { Hero, DataRows, SketchUnderline } from '../components/Sketch.jsx';
 
@@ -29,10 +30,8 @@ export default function Closet({ closet, setCloset }) {
   };
 
   const remove = (g) => {
-    if (confirm(`Delete ${g.name || g.brand || 'this piece'}?`)) {
-      setCloset((list) => list.filter((x) => x.id !== g.id));
-      setEditing(null);
-    }
+    setCloset((list) => list.filter((x) => x.id !== g.id));
+    setEditing(null);
   };
 
   if (editing) {
@@ -207,7 +206,7 @@ function GarmentForm({ initial, onSave, onCancel, onDelete }) {
       <div className="actions">
         <button type="submit" className="primary">Save</button>
         <button type="button" onClick={onCancel}>Cancel</button>
-        {onDelete && <button type="button" className="danger" onClick={onDelete}>Delete</button>}
+        {onDelete && <ConfirmButton label="Delete" confirmLabel="Tap again to delete" onConfirm={onDelete} />}
       </div>
     </form>
   );
