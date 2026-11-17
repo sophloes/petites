@@ -374,11 +374,11 @@ label.st-dealbreaker .diff, li.st-dealbreaker, span.st-dealbreaker { color: var(
   display: flex; gap: 4px;
   width: min(432px, calc(100% - 28px));
   padding: 5px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  /* Solid, so labels stay readable over the white sheet as it scrolls. */
+  background: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 16px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 20, 90, 0.35);
 }
 .tabbar button {
   flex: 1; border: 0; border-radius: 11px; background: none;
@@ -386,7 +386,7 @@ label.st-dealbreaker .diff, li.st-dealbreaker, span.st-dealbreaker { color: var(
   font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.78rem;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.tab-num { opacity: 0.6; font-size: 0.65rem; }
+.tab-num { opacity: 0.75; font-size: 0.65rem; }
 .tabbar button.active { background: #fff; color: var(--ink); }
 .tabbar button.active .tab-num { color: var(--hot); opacity: 1; }
 button.danger.armed { background: var(--deal); color: #fff; }
